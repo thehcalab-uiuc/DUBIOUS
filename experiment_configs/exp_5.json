@@ -1,0 +1,29 @@
+{
+    "id": "exp_5",
+    "english": "1 Observer, motive {1}, partial visibility, Our method, mislead, 0.5 efficiency weighting", 
+    "seed": 2026,
+    "env": {
+        "bounds": [-8, 8, -6, 6], 
+        "goals": [[4, 2], [4, 0], [4, -2]],
+        "observers": [
+            [0, 0, 1, [-4, 0], [4, 0], [4, 6], [-4, 6]]
+        ], 
+        "obstacles": []
+    }, 
+    "stomp": {
+        "n_waypoints": 40,
+        "k_noisy_paths": 100,
+        "r_inv_scaling": 10000,
+        "lambda_reg": 0.1,
+        "max_iter": 1000
+    }, 
+    "planner": {
+        "start_position": [-6, 0],
+        "goal_idx": 2
+    }, 
+    "legibility": {
+        "alpha_opp": 1.0,
+        "alpha_pathlength": 0.5, 
+        "decoy_goal_idx": 0
+    }
+}
