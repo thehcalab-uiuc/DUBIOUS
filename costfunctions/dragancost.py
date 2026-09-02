@@ -1,7 +1,7 @@
 from costfunctions.costfn import CostFunction
 import numpy as np
 
-# equatoin 3.7 from the thesis
+# equation 3.7 from the thesis
 class DraganCostFunction(CostFunction):
     def __init__(self, world):
         super().__init__(world)

@@ -54,8 +54,11 @@ class env:
         values = np.zeros(trajectory.shape[0])
         for obs in range(self.n_observers):
             mask = self.get_observer_view(trajectory, obs)
-            values[mask] += np.abs(self.observer_motives[obs])
-        values = np.where(values == 0, 1, values)
+            # values[mask] += self.observer_motives[obs]
+            values[mask] += 1
+        # values = np.abs(values)
+        # print(values)
+        values = np.where(values == 0, 1, values) # prevent divide by 0 in the future
         return values
 
     # obsolete
@@ -87,7 +90,7 @@ class env:
                 score += 1
         return score
 
-    def display(self, ax):
+    def display(self, ax, observers=True):
         # Display the environment bounds
         xmin, xmax, ymin, ymax = self.bounds
         ax.set_xlim(xmin, xmax)
@@ -111,18 +114,32 @@ class env:
                 plot_polygon(Polygon(obstacle), color='gray', alpha=1)
 
         # Display the observers and what they see
-        for i in range(self.n_observers):
-            pos = self.observer_positions[i]
-            polygon = self.observer_polygons[i]
+        if observers:
+            for i in range(self.n_observers):
+                pos = self.observer_positions[i]
+                polygon = self.observer_polygons[i]
 
-            color = 'darkred' if self.observer_motives[i] < 0 else 'green'
-            # plot_point(pos, color=color, marker='x')
-            plot_polygon(polygon, color=color, alpha= 0.1 + (0.2 * abs(self.observer_motives[i])))
+                color = 'darkred' if self.observer_motives[i] < 0 else 'green'
+                # plot_point(pos, color=color, marker='x')
+                plot_polygon(polygon, color=color, alpha= 0.1 + (0.2 * abs(self.observer_motives[i])))
 
         # Display the goals
-        for goal in self.goals:
+        for i in range(len(self.goals)):
+            goal = self.goals[i]
             plot_point(goal, color='purple', marker='*', size=15)
+            ax.annotate(f"G{i+1}", xy=goal, xytext=(2, 2), textcoords='offset points')
 
+    def save_to_png(self, filename, figtitle="", path=None):    
+        fig, ax = plt.subplots()
+        self.display(ax)
+        if path is not None:
+            p = np.array(path)
+            ax.plot(*p[0], 'o', color='black', )
+            ax.plot(p[:, 0], p[:, 1], linestyle='dashed', color='black')
+        # plt.legend()
+        ax.set_title(figtitle)
+        plt.savefig(filename)
+        plt.close(fig)
 
     def to_json_dict(self):
         data = {

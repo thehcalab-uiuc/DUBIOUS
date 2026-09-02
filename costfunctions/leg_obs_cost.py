@@ -28,26 +28,32 @@ class LegObvsCostFunction(LegibilityCostFunction):
     # input = trajectory of length T
     # output = cost of [:i] FOR EACH element.. meaning array length=T. 
     def evaluate_whole_traj(self, trajectory):
-        scores = self.pathlength_biasing * self.costfn_for_CT.evaluate_whole_traj(trajectory)
+        scores = np.zeros(len(trajectory))
         vis_values = self.env.sum_obs_view(trajectory)
-
+        # print(vis_values)
         for obs in range(self.env.n_observers):
             mask = self.env.get_observer_view(trajectory, obs)
-            traj_points = trajectory[mask]
-            window_start_index = np.argmax(mask)
+            if any(mask):
+                traj_points = trajectory[mask]
+                window_start_index = np.argmax(mask)
 
-            bad_obs = True if self.env.observer_motives[obs] < 0 else False
-            a_opp = self.opp_strat.value if bad_obs else 1 
+                bad_obs = True if self.env.observer_motives[obs] < 0 else False
+                a_opp = self.opp_strat.value if bad_obs else 1 
 
-            leg_scores = super().evaluate_whole_traj(
-                                trajectory = traj_points, 
-                                target_goal_idx = self.decoy_goal_idx if bad_obs else self.target_goal_idx, 
-                                scale=False, 
-                                T=len(trajectory) - window_start_index + 1
-                            )
-            
-            append_vals = (leg_scores * np.abs(self.env.observer_motives[obs]) * a_opp)
-            scores[mask] += append_vals
+                leg_scores = super().evaluate_whole_traj(
+                                    trajectory = traj_points, 
+                                    target_goal_idx = self.decoy_goal_idx if bad_obs else self.target_goal_idx, 
+                                    scale=False, 
+                                    T = len(traj_points) + 1
+                                    # T=len(trajectory) - window_start_index + 1
+                                )
+                
+                append_vals = (leg_scores * np.abs(self.env.observer_motives[obs]) * a_opp)
+                scores[mask] += append_vals
 
+        # print(scores)
         scores /= vis_values
+        # scores = (1-self.pathlength_biasing) * scores + self.pathlength_biasing * self.costfn_for_CT.evaluate_whole_traj(trajectory)
+        # print(scores)
+        # print("---")
         return scores

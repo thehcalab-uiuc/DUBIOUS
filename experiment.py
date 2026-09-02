@@ -1,12 +1,20 @@
 import json
+# import matplotlib
 import matplotlib.pyplot as plt
+# matplotlib.use("QtAgg")
 import time
 import os
 import numpy as np
+from tqdm import tqdm
 
 import costfunctions as costfns
 import planning_algs as ppa
 from environment import env
+
+# For getting higher res plots
+dpi = 500
+image_save_dpi = 1200
+
 
 class Experiment:
     def __init__(self, config_dict):
@@ -39,42 +47,33 @@ class Experiment:
             k_noisy_paths = config_dict["stomp"]["k_noisy_paths"],
             r_inv_scaling = config_dict["stomp"]["r_inv_scaling"],
             lambda_reg = config_dict["stomp"]["lambda_reg"],
-            max_iter = config_dict["stomp"]["max_iter"]
+            max_iter = config_dict["stomp"]["max_iter"], 
+            convergence_threshold = config_dict["stomp"]["convergence_threshold"] if "convergence_threshold" in config_dict["stomp"] else 1e-5
         )
 
         self.planner_config = config_dict["planner"]
 
     def run_exp(self):
         t = time.time()
-        self.path, self.info = self.planner.plan_path(**self.planner_config)
+        self.path, self.info = self.planner.plan_path(**self.planner_config, 
+                                intermittent_save=True, 
+                                save_dir=self.id)
         self.time_elapsed = time.time() - t
 
         return self.path, self.info, self.time_elapsed
 
     def save_fig(self, iter_num, traj=None):
-        # if iter_num not in self.info:
-        #     print(f"No info for iteration {iter_num} found.")
-        #     return
-    
-        fig, ax = plt.subplots()
-        self.env.display(ax)
-
-        if traj is not None:
-            for t in traj:
-                self.planner.display_path(ax, t["path"], color=t["color"], linestyle=t["linestyle"], label=t["label"])
-        else:
-            self.planner.display_path(ax, self.info[iter_num]['path'])
-        plt.legend()
-        # plt.savefig(f"{self.id}/Iter{iter_num}_notitle.png")
-        ax.set_title("STOMP Iteration no. " + str(iter_num))
-        plt.savefig(f"{self.id}/Iter{iter_num}.png")
-        plt.close(fig)
+        self.env.save_to_png(f"{self.id}/env_iter{iter_num}.png", 
+                              "STOMP Iteration no. " + str(iter_num),
+                              self.info[iter_num]['path'] if iter_num in self.info else None)
 
     def save_all_figs(self):
-        for iter_num in self.info:
+        print("Saving all iteration figures...")
+        for iter_num in tqdm(self.info):
             self.save_fig(iter_num)
 
     def save(self):
+        print("Saving all exp data....")
         self.save_env_and_path(
             env=self.env,
             path=self.path,
@@ -82,7 +81,7 @@ class Experiment:
             costfn=self.planner.costfn,
             filename=f"{self.id}/iter_final_env_path.json"
         )
-        for iter_num in self.info:
+        for iter_num in tqdm(self.info):
             self.save_env_and_path(
                 env=self.env,
                 path=self.info[iter_num]['path'],
